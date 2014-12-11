@@ -45,15 +45,14 @@ class LogStash::Inputs::Heartbeat < LogStash::Inputs::Threadable
 
     Stud.interval(@interval) do
       if @message == "epoch"
-        event = LogStash::Event.new("clock" => Time.now.to_i)
+        event = LogStash::Event.new("clock" => Time.now.to_i, "host" => @host)
       elsif @message == "sequence"
-        event = LogStash::Event.new("clock" => sequence)
+        event = LogStash::Event.new("clock" => sequence, "host" => @host)
       else
-        event = LogStash::Event.new("message" => @message)
+        event = LogStash::Event.new("message" => @message, "host" => @host)
       end
       
       decorate(event)
-      event["host"] = @host
       queue << event
 
       sequence += 1
@@ -63,10 +62,5 @@ class LogStash::Inputs::Heartbeat < LogStash::Inputs::Threadable
 
   public
   def teardown
-    @codec.flush do |event|
-      decorate(event)
-      event["host"] = @host
-      queue << event
-    end
   end # def teardown
 end # class LogStash::Inputs::Heartbeat
