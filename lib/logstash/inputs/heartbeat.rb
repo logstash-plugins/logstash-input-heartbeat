@@ -48,6 +48,7 @@ class LogStash::Inputs::Heartbeat < LogStash::Inputs::Threadable
         event = LogStash::Event.new("clock" => Time.now.to_i, "host" => @host)
       elsif @message == "sequence"
         event = LogStash::Event.new("clock" => sequence, "host" => @host)
+        sequence += 1
       else
         event = LogStash::Event.new("message" => @message, "host" => @host)
       end
@@ -55,7 +56,6 @@ class LogStash::Inputs::Heartbeat < LogStash::Inputs::Threadable
       decorate(event)
       queue << event
 
-      sequence += 1
     end # loop
 
   end # def run
