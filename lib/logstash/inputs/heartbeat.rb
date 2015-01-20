@@ -12,7 +12,6 @@ require "socket" # for Socket.gethostname
 
 class LogStash::Inputs::Heartbeat < LogStash::Inputs::Threadable
   config_name "heartbeat"
-  milestone 1
 
   default :codec, "plain"
 
