@@ -18,64 +18,43 @@ def fetch_event(config, number)
 end
 
 describe LogStash::Inputs::Heartbeat do
+  sequence = 1
   context "Default message test" do
-    subject do
-      next LogStash::Inputs::Heartbeat.new({})
-    end
+    subject { LogStash::Inputs::Heartbeat.new({}) }
 
     it "should generate an 'ok' message" do
-      sequence = 1
-      subject.generate_message(sequence) do |event|
-        insist { event['message'] } == 'ok'
-      end
+      expect(subject.generate_message(sequence)['message']).to eq('ok')
     end # it "should generate an 'ok' message"
   end # context "Default message test"
 
   context "Simple message test" do
-    subject do
-      next LogStash::Inputs::Heartbeat.new({"message" => "my_message"})
-    end
+    subject { LogStash::Inputs::Heartbeat.new({"message" => "my_message"}) }
 
     it "should generate a message containing 'my_message'" do
-      sequence = 2
-      subject.generate_message(sequence) do |event|
-        insist { event['message'] } == 'my_message'
-      end
+      expect(subject.generate_message(sequence)['message']).to eq('my_message')
     end # it "should generate a message containing 'my_message'"
   end # context "Simple message test" do
 
   context "Sequence test" do
-    subject do
-      next LogStash::Inputs::Heartbeat.new({"message" => "sequence"})
-    end
+    subject { LogStash::Inputs::Heartbeat.new({"message" => "sequence"}) }
 
     it "should return an event with the appropriate sequence value" do
-      sequence = 3
-      subject.generate_message(sequence) do |event|
-        insist { event['clock'] } == sequence
-      end
+      expect(subject.generate_message(sequence)['clock']).to eq(sequence)
     end # it "should return an event with the appropriate sequence value"
   end # context "Sequence test"
 
   context "Epoch test" do
-    subject do
-      next LogStash::Inputs::Heartbeat.new({"message" => "epoch"})
-    end
+    subject { LogStash::Inputs::Heartbeat.new({"message" => "epoch"}) }
 
     it "should return an event with the current time (as epoch)" do
-      sequence = 4
       now = Time.now.to_i
-      subject.generate_message(sequence) do |event|
-        # Give it a second, just in case
-        insist { event['clock'] - now } < 2
-      end
+      # Give it a second, just in case
+      expect(subject.generate_message(sequence)['clock'] - now).to be < 2
     end # it "should return an event with the current time (as epoch)"
   end # context "Epoch test"
-end
 
-describe "inputs/heartbeat" do
-  count = 4
-  it "should generate #{count} events then stop" do
+  it "should generate a fixed number of events then stop" do
+    count = 4
     config = <<-CONFIG
       input {
         heartbeat {
@@ -87,6 +66,6 @@ describe "inputs/heartbeat" do
     CONFIG
 
     event = fetch_event(config, count)
-    insist { event['clock'] } == count
+    expect(event['clock']).to eq(count)
   end
 end
