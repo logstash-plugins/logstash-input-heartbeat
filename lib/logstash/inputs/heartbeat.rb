@@ -67,7 +67,4 @@ class LogStash::Inputs::Heartbeat < LogStash::Inputs::Threadable
     end
   end
 
-  public
-  def teardown
-  end # def teardown
 end # class LogStash::Inputs::Heartbeat
