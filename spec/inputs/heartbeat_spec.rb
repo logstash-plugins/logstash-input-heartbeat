@@ -1,22 +1,6 @@
 require "logstash/devutils/rspec/spec_helper"
 require "logstash/inputs/heartbeat"
 
-def fetch_event(config, number)
-  pipeline = LogStash::Pipeline.new(config)
-  queue = Queue.new
-  pipeline.instance_eval do
-    @output_func = lambda { |event| queue << event }
-  end
-  pipeline_thread = Thread.new { pipeline.run }
-  counter = 0
-  begin
-    event = queue.pop
-    pipeline_thread.join
-    counter += 1
-  end until counter == number
-  return event
-end
-
 describe LogStash::Inputs::Heartbeat do
   sequence = 1
   context "Default message test" do
@@ -65,7 +49,10 @@ describe LogStash::Inputs::Heartbeat do
       }
     CONFIG
 
-    event = fetch_event(config, count)
-    expect(event['clock']).to eq(count)
+    events = input(config) do |pipeline, queue|
+      count.times.map{queue.pop}
+    end
+
+    events.each_with_index{|event, i| expect(event['clock']).to eq(i + 1)}
   end
 end
