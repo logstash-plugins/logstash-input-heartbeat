@@ -1,7 +1,7 @@
 Gem::Specification.new do |s|
 
   s.name            = 'logstash-input-heartbeat'
-  s.version         = '0.1.4'
+  s.version         = '0.1.5'
   s.licenses        = ['Apache License (2.0)']
   s.summary         = "This input generates a heartbeat pattern to aid in monitoring Logstash performance & availability"
   s.description     = "This gem is a logstash plugin required to be installed on top of the Logstash core pipeline using $LS_HOME/bin/plugin install gemname. This gem is not a stand-alone program"
