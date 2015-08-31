@@ -2,6 +2,11 @@ require "logstash/devutils/rspec/spec_helper"
 require "logstash/inputs/heartbeat"
 
 describe LogStash::Inputs::Heartbeat do
+
+  it_behaves_like "an interruptible input plugin" do
+    let(:config) { { "interval" => 100 } }
+  end
+
   sequence = 1
   context "Default message test" do
     subject { LogStash::Inputs::Heartbeat.new({}) }
@@ -37,22 +42,14 @@ describe LogStash::Inputs::Heartbeat do
     end # it "should return an event with the current time (as epoch)"
   end # context "Epoch test"
 
-  it "should generate a fixed number of events then stop" do
-    count = 4
-    config = <<-CONFIG
-      input {
-        heartbeat {
-          interval => 1
-          message => "sequence"
-          count => #{count}
-        }
-      }
-    CONFIG
+  context "with a fixed count" do
+    let(:events) { [] }
+    let(:count) { 4 }
+    subject { LogStash::Inputs::Heartbeat.new("interval" => 1, "message" => "sequence", "count" => count) }
 
-    events = input(config) do |pipeline, queue|
-      count.times.map{queue.pop}
+    it "should generate a fixed number of events then stop" do
+      subject.run(events)
+      events.each_with_index{|event, i| expect(event['clock']).to eq(i + 1)}
     end
-
-    events.each_with_index{|event, i| expect(event['clock']).to eq(i + 1)}
   end
 end
