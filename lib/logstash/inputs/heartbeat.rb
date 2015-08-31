@@ -45,13 +45,14 @@ class LogStash::Inputs::Heartbeat < LogStash::Inputs::Threadable
 
   def run(queue)
     sequence = 0
+    @thread = Thread.current
 
     Stud.interval(@interval) do
       sequence += 1
       event = generate_message(sequence)
       decorate(event)
       queue << event
-      break if sequence == @count
+      break if sequence == @count || stop?
     end # loop
 
   end # def run
@@ -67,4 +68,7 @@ class LogStash::Inputs::Heartbeat < LogStash::Inputs::Threadable
     end
   end
 
+  def stop
+    Stud.stop!(@thread)
+  end
 end # class LogStash::Inputs::Heartbeat
