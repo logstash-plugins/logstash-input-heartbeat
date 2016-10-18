@@ -40,7 +40,7 @@ class LogStash::Inputs::Heartbeat < LogStash::Inputs::Threadable
 
   public
   def register
-    @host = Socket.gethostname
+    @host = `uname -n`.chomp.sub(/\..*/,'')
   end # def register
 
   def run(queue)
