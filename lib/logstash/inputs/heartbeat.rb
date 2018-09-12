@@ -38,26 +38,27 @@ class LogStash::Inputs::Heartbeat < LogStash::Inputs::Threadable
   # This is typically used only for testing purposes.
   config :count, :validate => :number, :default => -1
 
-  public
   def register
     @host = Socket.gethostname
-  end # def register
+  end
 
   def run(queue)
     sequence = 0
-    @thread = Thread.current
 
-    Stud.interval(@interval) do
+    while !stop?
+      start = Time.now
+
       sequence += 1
       event = generate_message(sequence)
       decorate(event)
       queue << event
       break if sequence == @count || stop?
-    end # loop
 
-  end # def run
+      sleep_for = @interval - (Time.now - start)
+      Stud.stoppable_sleep(sleep_for) { stop? } if sleep_for > 0
+    end
+  end
 
-  public
   def generate_message(sequence)
     if @message == "epoch"
       LogStash::Event.new("clock" => Time.now.to_i, "host" => @host)
@@ -67,8 +68,4 @@ class LogStash::Inputs::Heartbeat < LogStash::Inputs::Threadable
       LogStash::Event.new("message" => @message, "host" => @host)
     end
   end
-
-  def stop
-    Stud.stop!(@thread)
-  end
-end # class LogStash::Inputs::Heartbeat
+end
