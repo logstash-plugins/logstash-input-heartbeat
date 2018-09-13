@@ -1,3 +1,6 @@
+## 3.0.7
+  - Fixed shutdown concurrency issues by simplifying shutdown signal handling [#15](https://github.com/logstash-plugins/logstash-input-heartbeat/pull/15)
+
 ## 3.0.6
   - Docs: Set the default_codec doc attribute.
 
