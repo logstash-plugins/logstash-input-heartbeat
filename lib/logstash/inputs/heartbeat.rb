@@ -41,9 +41,28 @@ class LogStash::Inputs::Heartbeat < LogStash::Inputs::Threadable
   # This is typically used only for testing purposes.
   config :count, :validate => :number, :default => -1
 
+  # Select the type of sequence, deprecating the 'epoch' and 'sequence' values in 'message'.
+  #
+  # If you set this to `epoch` then this plugin will use the current
+  # timestamp in unix timestamp (which is by definition, UTC).
+  #
+  # If you set this to `sequence` then this plugin will send a sequence of
+  # numbers beginning at 0 and incrementing each interval.
+  #
+  # If you set this to 'none' then no field is created
+  config :sequence_type, :validate => ["none", "epoch", "sequence"]
+
   def register
     @host = Socket.gethostname
     @field_sequence = ecs_select[disabled: "clock", v1: "[event][sequence]"]
+    if sequence_type.nil? && ["epoch", "sequence"].include?(message)
+      logger.warn("message contains sequence type specification (epoch|sequence) for this purpose use the sequence_type option")
+    end
+    unless sequence_type.nil?
+      @sequence_selector = decode_sequence_selector(sequence_type)
+    else
+      @sequence_selector = decode_sequence_selector(message)
+    end
   end
 
   def run(queue)
@@ -64,13 +83,21 @@ class LogStash::Inputs::Heartbeat < LogStash::Inputs::Threadable
   end
 
   def generate_message(sequence)
-    unless ["epoch", "sequence"].include? @message
+    if @sequence_selector == :none
       return LogStash::Event.new("message" => @message, "host" => @host)
     end
 
-    sequence_value = @message == "epoch" ? Time.now.to_i : sequence
+    sequence_value = @sequence_selector == :epoch ? Time.now.to_i : sequence
     evt = LogStash::Event.new("host" => @host)
     evt.set(@field_sequence, sequence_value)
     evt
+  end
+
+  private
+  def decode_sequence_selector(value)
+     if ["epoch", "sequence"].include? value
+       return value.to_sym
+     end
+     :none
   end
 end

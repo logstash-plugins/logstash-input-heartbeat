@@ -79,4 +79,14 @@ describe LogStash::Inputs::Heartbeat do
       end
     end
   end
+
+  context "sequence_type settings test" do
+      subject { LogStash::Inputs::Heartbeat.new({"sequence_type" => "epoch", "message" => "sequence", "ecs_compatibility" => :disabled}) }
+
+      it "should return an event giving sequence_type precedence over message" do
+        now = Time.now.to_i
+        # Give it a second, just in case
+        expect(subject.generate_message(sequence).get("clock") - now).to be < 2
+      end # it "should return an event with the current time (as epoch)"
+    end # context "Epoch test"
 end
