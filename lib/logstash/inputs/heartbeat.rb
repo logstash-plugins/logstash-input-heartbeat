@@ -3,6 +3,7 @@ require "logstash/inputs/threadable"
 require "logstash/namespace"
 require "stud/interval"
 require "socket" # for Socket.gethostname
+require "logstash/plugin_mixins/ecs_compatibility_support"
 
 # Generate heartbeat messages.
 #
@@ -11,6 +12,8 @@ require "socket" # for Socket.gethostname
 #
 
 class LogStash::Inputs::Heartbeat < LogStash::Inputs::Threadable
+  include LogStash::PluginMixins::ECSCompatibilitySupport(:disabled, :v1, :v8 => :v1)
+
   config_name "heartbeat"
 
   default :codec, "plain"
@@ -40,6 +43,7 @@ class LogStash::Inputs::Heartbeat < LogStash::Inputs::Threadable
 
   def register
     @host = Socket.gethostname
+    @field_sequence = ecs_select[disabled: "clock", v1: "[event][sequence]"]
   end
 
   def run(queue)
@@ -60,12 +64,13 @@ class LogStash::Inputs::Heartbeat < LogStash::Inputs::Threadable
   end
 
   def generate_message(sequence)
-    if @message == "epoch"
-      LogStash::Event.new("clock" => Time.now.to_i, "host" => @host)
-    elsif @message == "sequence"
-      LogStash::Event.new("clock" => sequence, "host" => @host)
-    else
-      LogStash::Event.new("message" => @message, "host" => @host)
+    unless ["epoch", "sequence"].include? @message
+      return LogStash::Event.new("message" => @message, "host" => @host)
     end
+
+    sequence_value = @message == "epoch" ? Time.now.to_i : sequence
+    evt = LogStash::Event.new("host" => @host)
+    evt.set(@field_sequence, sequence_value)
+    evt
   end
 end

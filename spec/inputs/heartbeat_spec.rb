@@ -8,6 +8,10 @@ describe LogStash::Inputs::Heartbeat do
     let(:config) { { "interval" => 100 } }
   end
 
+  before :each do
+    subject.register
+  end
+
   sequence = 1
   context "Default message test" do
     subject { LogStash::Inputs::Heartbeat.new({}) }
@@ -26,7 +30,7 @@ describe LogStash::Inputs::Heartbeat do
   end # context "Simple message test" do
 
   context "Sequence test" do
-    subject { LogStash::Inputs::Heartbeat.new({"message" => "sequence"}) }
+    subject { LogStash::Inputs::Heartbeat.new({"message" => "sequence", "ecs_compatibility" => :disabled}) }
 
     it "should return an event with the appropriate sequence value" do
       expect(subject.generate_message(sequence).get("clock")).to eq(sequence)
@@ -34,7 +38,7 @@ describe LogStash::Inputs::Heartbeat do
   end # context "Sequence test"
 
   context "Epoch test" do
-    subject { LogStash::Inputs::Heartbeat.new({"message" => "epoch"}) }
+    subject { LogStash::Inputs::Heartbeat.new({"message" => "epoch", "ecs_compatibility" => :disabled}) }
 
     it "should return an event with the current time (as epoch)" do
       now = Time.now.to_i
@@ -43,14 +47,36 @@ describe LogStash::Inputs::Heartbeat do
     end # it "should return an event with the current time (as epoch)"
   end # context "Epoch test"
 
+  context "Epoch test with ECS enabled" do
+    subject { LogStash::Inputs::Heartbeat.new({"message" => "epoch", "ecs_compatibility" => :v1}) }
+
+    it "should return an event with the current time (as epoch)" do
+      now = Time.now.to_i
+      # Give it a second, just in case
+      expect(subject.generate_message(sequence).get("[event][sequence]") - now).to be < 2
+    end
+  end
+
   context "with a fixed count" do
     let(:events) { [] }
     let(:count) { 4 }
-    subject { LogStash::Inputs::Heartbeat.new("interval" => 1, "message" => "sequence", "count" => count) }
 
-    it "should generate a fixed number of events then stop" do
-      subject.run(events)
-      events.each_with_index{|event, i| expect(event.get("clock")).to eq(i + 1)}
+    context "ECS disabled" do
+      subject { LogStash::Inputs::Heartbeat.new("interval" => 1, "message" => "sequence", "count" => count, "ecs_compatibility" => :disabled) }
+
+      it "should generate a fixed number of events then stop" do
+        subject.run(events)
+        events.each_with_index{|event, i| expect(event.get("clock")).to eq(i + 1)}
+      end
+    end
+
+    context "ECS enabled" do
+      subject { LogStash::Inputs::Heartbeat.new("interval" => 1, "message" => "sequence", "count" => count, "ecs_compatibility" => :v1) }
+
+      it "should generate a fixed number of events then stop" do
+        subject.run(events)
+        events.each_with_index{|event, i| expect(event.get("[event][sequence]")).to eq(i + 1)}
+      end
     end
   end
 end
