@@ -72,7 +72,7 @@ class LogStash::Inputs::Heartbeat < LogStash::Inputs::Threadable
         logger.warn("message setting still contains 'epoch' or 'sequence' selectors which is not considered for for configuring the plugin")
       end
     end
-    @valid_message_payload = "epoch" !=  message && "sequence" != message
+    @valid_message_payload = message && "epoch" !=  message && "sequence" != message
   end
 
   def run(queue)
