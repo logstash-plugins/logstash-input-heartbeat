@@ -43,12 +43,14 @@ describe LogStash::Inputs::Heartbeat do
     it "should return an event with the current time (as epoch)" do
       now = Time.now.to_i
       # Give it a second, just in case
-      expect(subject.generate_message(sequence).get("clock") - now).to be < 2
+      evt = subject.generate_message(sequence)
+      expect(evt.get("clock") - now).to be < 2
+      expect(evt).to_not include "message"
     end # it "should return an event with the current time (as epoch)"
   end # context "Epoch test"
 
   context "Epoch test with ECS enabled" do
-    subject { LogStash::Inputs::Heartbeat.new({"sequence_type" => "epoch", "ecs_compatibility" => :v1}) }
+    subject { LogStash::Inputs::Heartbeat.new({"sequence" => "epoch", "ecs_compatibility" => :v1}) }
 
     it "should return an event with the current time (as epoch)" do
       now = Time.now.to_i
@@ -57,21 +59,21 @@ describe LogStash::Inputs::Heartbeat do
     end
 
     context "and message is defined with sequence selector" do
-      subject { LogStash::Inputs::Heartbeat.new({"sequence_type" => "epoch", "message" => "sequence", "ecs_compatibility" => :v1}) }
+      subject { LogStash::Inputs::Heartbeat.new({"sequence" => "epoch", "message" => "sequence", "ecs_compatibility" => :v1}) }
       
-      it "should return an event without the message field but populating the sequence field as requested by 'sequence_type' setting" do
+      it "should return an event without the message field but populating the sequence field as requested by 'sequence' setting" do
         now = Time.now.to_i
         # Give it a second, just in case
         evt = subject.generate_message(sequence)
         expect(evt.get("[event][sequence]") - now).to be < 2
-        expect(evt.include?("message")).to be false
+        expect(evt).to_not include "message"
       end
     end
 
     context "and message is defined with free text" do
-      subject { LogStash::Inputs::Heartbeat.new({"sequence_type" => "epoch", "message" => "funny message", "ecs_compatibility" => :v1}) }
+      subject { LogStash::Inputs::Heartbeat.new({"sequence" => "epoch", "message" => "funny message", "ecs_compatibility" => :v1}) }
 
-      it "should return an event without the message field but populating the sequence field as requested by 'sequence_type' setting" do
+      it "should return an event without the message field but populating the sequence field as requested by 'sequence' setting" do
         now = Time.now.to_i
         # Give it a second, just in case
         evt = subject.generate_message(sequence)
@@ -95,7 +97,7 @@ describe LogStash::Inputs::Heartbeat do
     end
 
     context "ECS enabled" do
-      subject { LogStash::Inputs::Heartbeat.new("interval" => 1, "sequence_type" => "sequence", "count" => count, "ecs_compatibility" => :v1) }
+      subject { LogStash::Inputs::Heartbeat.new("interval" => 1, "sequence" => "sequence", "count" => count, "ecs_compatibility" => :v1) }
 
       it "should generate a fixed number of events then stop" do
         subject.run(events)
@@ -104,10 +106,10 @@ describe LogStash::Inputs::Heartbeat do
     end
   end
 
-  context "sequence_type settings test" do
-      subject { LogStash::Inputs::Heartbeat.new({"sequence_type" => "epoch", "message" => "sequence", "ecs_compatibility" => :disabled}) }
+  context "sequence settings test" do
+      subject { LogStash::Inputs::Heartbeat.new({"sequence" => "epoch", "message" => "sequence", "ecs_compatibility" => :disabled}) }
 
-      it "should return an event giving sequence_type precedence over message" do
+      it "should return an event giving sequence precedence over message" do
         now = Time.now.to_i
         # Give it a second, just in case
         expect(subject.generate_message(sequence).get("clock") - now).to be < 2

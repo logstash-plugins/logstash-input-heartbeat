@@ -50,58 +50,57 @@ class LogStash::Inputs::Heartbeat < LogStash::Inputs::Threadable
   # numbers beginning at 0 and incrementing each interval.
   #
   # If you set this to 'none' then no field is created
-  config :sequence_type, :validate => ["none", "epoch", "sequence"]
+  config :sequence, :validate => ["none", "epoch", "sequence"]
 
   def register
     @host = Socket.gethostname
     @field_sequence = ecs_select[disabled: "clock", v1: "[event][sequence]"]
-    if sequence_type.nil? && ["epoch", "sequence"].include?(message)
-      logger.warn("message contains sequence type specification (epoch|sequence) for this purpose use the sequence_type option")
+    if sequence.nil? && ["epoch", "sequence"].include?(message)
+      logger.warn("message contains sequence type specification (epoch|sequence) for this purpose use the sequence option")
     end
     if ecs_compatibility == :disabled
-      unless sequence_type.nil?
-        @sequence_selector = decode_sequence_selector(sequence_type)
-        logger.debug("Using sequence_type as sequence selector")
+      unless sequence.nil?
+        @sequence_selector = decode_sequence_selector(sequence)
+        logger.debug("Using sequence as sequence selector")
       else
         @sequence_selector = decode_sequence_selector(message)
         logger.debug("Using message as sequence selector")
       end
     else
-      @sequence_selector = decode_sequence_selector(sequence_type)
+      @sequence_selector = decode_sequence_selector(sequence)
       if ["epoch", "sequence"].include?(message)
         logger.warn("message setting still contains 'epoch' or 'sequence' selectors which is not considered for for configuring the plugin")
       end
     end
+    @valid_message_payload = "epoch" !=  message && "sequence" != message
   end
 
   def run(queue)
-    sequence = 0
+    sequence_count = 0
 
     while !stop?
       start = Time.now
 
-      sequence += 1
-      event = generate_message(sequence)
+      sequence_count += 1
+      event = generate_message(sequence_count)
       decorate(event)
       queue << event
-      break if sequence == @count || stop?
+      break if sequence_count == @count || stop?
 
       sleep_for = @interval - (Time.now - start)
       Stud.stoppable_sleep(sleep_for) { stop? } if sleep_for > 0
     end
   end
 
-  def generate_message(sequence)
+  def generate_message(sequence_count)
     if @sequence_selector == :none
       return LogStash::Event.new("message" => @message, "host" => @host)
     end
 
-    sequence_value = @sequence_selector == :epoch ? Time.now.to_i : sequence
+    sequence_value = @sequence_selector == :epoch ? Time.now.to_i : sequence_count
     evt = LogStash::Event.new("host" => @host)
     evt.set(@field_sequence, sequence_value)
-    unless ecs_compatibility != :disabled && ["epoch", "sequence"].include?(message)
-      evt.set("message", @message)
-    end
+    evt.set("message", @message) if @valid_message_payload
     evt
   end
 
