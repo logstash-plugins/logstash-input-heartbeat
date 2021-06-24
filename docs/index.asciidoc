@@ -29,9 +29,9 @@ availability of Logstash.
 [id="plugins-{type}s-{plugin}-ecs"]
 ==== Elastic Common Schema (ECS)
 
-This plugin could provide a field originally named `clock` to track `epoch` or `sequence` incremental numbers. When
+This plugin could provide a field, originally named `clock`, to track `epoch` or `sequence` incremental numbers. When
 <<plugins-{type}s-{plugin}-ecs_compatibility,ECS compatibility mode>> is enabled that value is now present in the
-`[event][sequence]` subfield.
+event's `[event][sequence]` subfield.
 When <<plugins-{type}s-{plugin}-ecs_compatibility,ECS compatibility mode>> is enabled the use of `message` as
 selector of sequence type is not available and only <<plugins-{type}s-{plugin}-sequence>> is considered. In this
 case if `message` contains sequence selector strings it's ignored.
@@ -71,8 +71,8 @@ This is typically used only for testing purposes.
 
 * Value type is <<string,string>>
 * Supported values are:
-** `disabled`: unstructured connection metadata added at root level
-** `v1`: structured connection metadata added under ECS compliant namespaces
+** `disabled`: `clock` counter field added at root level
+** `v1`: ECS compliant `[event][sequence]` counter field added to the event
 * Default value depends on which version of Logstash is running:
 ** When Logstash provides a `pipeline.ecs_compatibility` setting, its value is used as the default
 ** Otherwise, the default value is `disabled`.
@@ -110,7 +110,7 @@ will output this value into a field called `message`
 
 NOTE: Usage of `epoch`  and `sequence` in `message` setting is deprecated.
 Consider to use <<plugins-{type}s-{plugin}-sequence>> settings, which takes precedence
-over the usage of `message` as selector.
+over the usage of `message setting as selector.
 
 NOTE: If <<plugins-{type}s-{plugin}-ecs_compatibility,ECS compatibility mode>> is enabled
 and `message` contains `epoch` or `sequence` it's ignored and it's not present as a field in
@@ -127,19 +127,17 @@ If you set this to `none` then no sequence field is added.
 
 If you set this to `epoch` then this plugin will use the current
 timestamp in unix timestamp (which is by definition, UTC).  It will
-output this value into a field called `clock`
+output this value into a field called `clock` if <<plugins-{type}s-{plugin}-ecs_compatibility,ECS compatibility mode>>
+is disabled else the field name is `[event][sequence]`.
 
 If you set this to `sequence` then this plugin will send a sequence of
 numbers beginning at 0 and incrementing each interval.  It will
-output this value into a field called `clock`.
+output this value into a field called `clock` if <<plugins-{type}s-{plugin}-ecs_compatibility,ECS compatibility mode>>
+is disabled else the field name is `[event][sequence]`
 
 If `sequence` is defined it takes precedence over `message` configuration; in case `message` doesn't
 have `epoch` or `sequence` values, it will be present also in the generated event together with `clock`
 field.
-
-If <<plugins-{type}s-{plugin}-ecs_compatibility,ECS compatibility mode>> is enabled the `clock` field
-is replaced by `[event][sequence]` subfield.
-
 
 
 [id="plugins-{type}s-{plugin}-threads"]

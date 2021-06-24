@@ -1,5 +1,5 @@
 ## 3.1.0
-  - Added new `sequence` field to manage the type of sequence generator and added ECS 
+  - Added new `sequence` setting to manage the type of sequence generator and added ECS 
     compatibility behavior [#18](https://github.com/logstash-plugins/logstash-input-heartbeat/pull/18)
 
 ## 3.0.7
