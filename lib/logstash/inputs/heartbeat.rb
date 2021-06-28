@@ -59,7 +59,7 @@ class LogStash::Inputs::Heartbeat < LogStash::Inputs::Threadable
       logger.warn("message contains sequence type specification (epoch|sequence) for this purpose use the sequence option")
     end
     if ecs_compatibility == :disabled
-      unless sequence.nil?
+      if sequence
         @sequence_selector = decode_sequence_selector(sequence)
         logger.debug("Using sequence as sequence selector")
       else
