@@ -58,21 +58,14 @@ class LogStash::Inputs::Heartbeat < LogStash::Inputs::Threadable
     if sequence.nil? && ["epoch", "sequence"].include?(message)
       logger.warn("message contains sequence type specification (epoch|sequence) for this purpose use the sequence option")
     end
-    if ecs_compatibility == :disabled
-      if sequence
-        @sequence_selector = decode_sequence_selector(sequence)
-        logger.debug("Using sequence as sequence selector")
-      else
-        @sequence_selector = decode_sequence_selector(message)
-        logger.debug("Using message as sequence selector")
-      end
-    else
-      @sequence_selector = decode_sequence_selector(sequence)
-      if ["epoch", "sequence"].include?(message)
-        logger.warn("message setting still contains 'epoch' or 'sequence' selectors which is not considered for for configuring the plugin")
+    if ecs_compatibility == :disabled && @sequence.nil?
+      if %w(epoch sequence).include?(@message)
+        logger.debug("intercepting magic `message` to configure `sequence`: `#{@message}`")
+        @sequence, @message = @message, nil # legacy: intercept magic messages
+        deprecation_logger.deprecated("magic values of `message` to specify sequence type are deprecated; use separate `sequence` option instead.")
       end
     end
-    @valid_message_payload = message && "epoch" !=  message && "sequence" != message
+    @sequence_selector = sequence.to_sym
   end
 
   def run(queue)
@@ -100,15 +93,7 @@ class LogStash::Inputs::Heartbeat < LogStash::Inputs::Threadable
     sequence_value = @sequence_selector == :epoch ? Time.now.to_i : sequence_count
     evt = LogStash::Event.new("host" => @host)
     evt.set(@field_sequence, sequence_value)
-    evt.set("message", @message) if @valid_message_payload
+    evt.set("message", @message) unless @message.nil?
     evt
-  end
-
-  private
-  def decode_sequence_selector(value)
-     if ["epoch", "sequence"].include? value
-       return value.to_sym
-     end
-     :none
   end
 end
