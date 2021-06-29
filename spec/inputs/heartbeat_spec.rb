@@ -1,6 +1,7 @@
 require "logstash/devutils/rspec/spec_helper"
 require "logstash/devutils/rspec/shared_examples"
 require "logstash/inputs/heartbeat"
+require "logstash/plugin_mixins/ecs_compatibility_support/spec_helper"
 
 describe LogStash::Inputs::Heartbeat do
 
@@ -116,4 +117,20 @@ describe LogStash::Inputs::Heartbeat do
       expect(subject.generate_message(sequence).get("clock") - now).to be < 2
     end # it "should return an event with the current time (as epoch)"
   end # context "Epoch test"
+
+  shared_examples "use hostname field with ECS" do |ecs_compatibility, field_name|
+    subject { LogStash::Inputs::Heartbeat.new({"ecs_compatibility" => ecs_compatibility}) }
+
+    before(:each) do
+      subject.register
+    end
+
+    it "should populate #{field_name}" do
+      evt = subject.generate_message(sequence)
+      expect(evt.get(field_name)).to eq(Socket.gethostname)
+    end
+  end
+
+  it_behaves_like "use hostname field with ECS", :disabled, "host"
+  it_behaves_like "use hostname field with ECS", :v1, "[host][name]"
 end

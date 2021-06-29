@@ -57,6 +57,7 @@ class LogStash::Inputs::Heartbeat < LogStash::Inputs::Threadable
   def register
     @host = Socket.gethostname
     @field_sequence = ecs_select[disabled: "clock", v1: "[event][sequence]"]
+    @field_host = ecs_select[disabled: "host", v1: "[host][name]"]
     if sequence.nil? && ["epoch", "sequence"].include?(message)
       logger.warn("message contains sequence type specification (epoch|sequence) for this purpose use the sequence option")
     end
@@ -90,11 +91,14 @@ class LogStash::Inputs::Heartbeat < LogStash::Inputs::Threadable
 
   def generate_message(sequence_count)
     if @sequence_selector == :none
-      return LogStash::Event.new("message" => @message, "host" => @host)
+      evt = LogStash::Event.new("message" => @message)
+      evt.set(@field_host, @host)
+      return evt
     end
 
     sequence_value = @sequence_selector == :epoch ? Time.now.to_i : sequence_count
-    evt = LogStash::Event.new("host" => @host)
+    evt = LogStash::Event.new()
+    evt.set(@field_host, @host)
     evt.set(@field_sequence, sequence_value)
     evt.set("message", @message) unless @message.nil?
     evt
