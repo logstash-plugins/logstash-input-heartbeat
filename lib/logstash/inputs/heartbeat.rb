@@ -3,6 +3,7 @@ require "logstash/inputs/threadable"
 require "logstash/namespace"
 require "stud/interval"
 require "socket" # for Socket.gethostname
+require "logstash/plugin_mixins/deprecation_logger_support"
 require "logstash/plugin_mixins/ecs_compatibility_support"
 
 # Generate heartbeat messages.
@@ -12,6 +13,7 @@ require "logstash/plugin_mixins/ecs_compatibility_support"
 #
 
 class LogStash::Inputs::Heartbeat < LogStash::Inputs::Threadable
+  include LogStash::PluginMixins::DeprecationLoggerSupport
   include LogStash::PluginMixins::ECSCompatibilitySupport(:disabled, :v1, :v8 => :v1)
 
   config_name "heartbeat"
@@ -65,7 +67,8 @@ class LogStash::Inputs::Heartbeat < LogStash::Inputs::Threadable
         deprecation_logger.deprecated("magic values of `message` to specify sequence type are deprecated; use separate `sequence` option instead.")
       end
     end
-    @sequence_selector = sequence.to_sym
+    @sequence = "none" if @sequence.nil?
+    @sequence_selector = @sequence.to_sym
   end
 
   def run(queue)
