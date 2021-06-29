@@ -77,7 +77,8 @@ This is typically used only for testing purposes.
 ** When Logstash provides a `pipeline.ecs_compatibility` setting, its value is used as the default
 ** Otherwise, the default value is `disabled`.
 
-Refer to <<plugins-{type}s-{plugin}-ecs,ECS mapping>> for detailed information.
+Controls this plugin's compatibility with the {ecs-ref}[Elastic Common Schema (ECS)]. 
+Refer to <<plugins-{type}s-{plugin}-ecs>> in this topic for detailed information.
 
 [id="plugins-{type}s-{plugin}-interval"]
 ===== `interval` 
