@@ -39,10 +39,10 @@ case if `message` contains sequence selector strings it's ignored.
 
 The existing `host` field is moved to `[host][name]` when ECS is enabled.
 
-.Metadata Location by `ecs_compatibility` value
 [cols="<l,<l,e,<e"]
 |============================================================================================================
 |`disabled`    |`v1`              |Availability                       |Description
+
 |[host]        |[host][name]      |Always                             |Name or address of the host is running the plugin
 |[clock]       |[event][sequence] |When `sequence` setting enables it |Increment counter based on seconds or from local 0 based counter
 |============================================================================================================
