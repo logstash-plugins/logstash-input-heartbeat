@@ -5,6 +5,7 @@ require "stud/interval"
 require "socket" # for Socket.gethostname
 require "logstash/plugin_mixins/deprecation_logger_support"
 require "logstash/plugin_mixins/ecs_compatibility_support"
+require 'logstash/plugin_mixins/event_support/event_factory_adapter'
 
 # Generate heartbeat messages.
 #
@@ -15,6 +16,7 @@ require "logstash/plugin_mixins/ecs_compatibility_support"
 class LogStash::Inputs::Heartbeat < LogStash::Inputs::Threadable
   include LogStash::PluginMixins::DeprecationLoggerSupport
   include LogStash::PluginMixins::ECSCompatibilitySupport(:disabled, :v1, :v8 => :v1)
+  include LogStash::PluginMixins::EventSupport::EventFactoryAdapter
 
   config_name "heartbeat"
 
@@ -91,15 +93,15 @@ class LogStash::Inputs::Heartbeat < LogStash::Inputs::Threadable
 
   def generate_message(sequence_count)
     if @sequence_selector == :none
-      evt = LogStash::Event.new("message" => @message)
+      evt = event_factory.new_event("message" => @message)
       evt.set(@field_host, @host)
       return evt
     end
 
     sequence_value = @sequence_selector == :epoch ? Time.now.to_i : sequence_count
-    evt = LogStash::Event.new()
-    evt.set(@field_host, @host)
+    evt = event_factory.new_event()
     evt.set(@field_sequence, sequence_value)
+    evt.set(@field_host, @host)
     evt.set("message", @message) unless @message.nil?
     evt
   end
