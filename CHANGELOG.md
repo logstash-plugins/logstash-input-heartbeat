@@ -1,3 +1,7 @@
+## 3.1.0
+  - Added new `sequence` setting to manage the type of sequence generator and added ECS 
+    compatibility behavior [#18](https://github.com/logstash-plugins/logstash-input-heartbeat/pull/18)
+
 ## 3.0.7
   - Fixed shutdown concurrency issues by simplifying shutdown signal handling [#15](https://github.com/logstash-plugins/logstash-input-heartbeat/pull/15)
 
