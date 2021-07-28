@@ -118,19 +118,22 @@ describe LogStash::Inputs::Heartbeat do
     end # it "should return an event with the current time (as epoch)"
   end # context "Epoch test"
 
-  shared_examples "use hostname field with ECS" do |ecs_compatibility, field_name|
-    subject { LogStash::Inputs::Heartbeat.new({"ecs_compatibility" => ecs_compatibility}) }
+  shared_examples "host name respects ECS setting" do |ecs_compatibility, field_name|
+    context "when ECS compatibility is `#{ecs_compatibility}`" do
+      subject { LogStash::Inputs::Heartbeat.new({"ecs_compatibility" => ecs_compatibility}) }
 
-    before(:each) do
-      subject.register
-    end
+      before(:each) do
+        subject.register
+      end
 
-    it "should populate #{field_name}" do
-      evt = subject.generate_message(sequence)
-      expect(evt.get(field_name)).to eq(Socket.gethostname)
+      it "populates the host name into `#{field_name}`" do
+        evt = subject.generate_message(sequence)
+        expect(evt.get(field_name)).to eq(Socket.gethostname)
+      end
     end
   end
 
-  it_behaves_like "use hostname field with ECS", :disabled, "host"
-  it_behaves_like "use hostname field with ECS", :v1, "[host][name]"
+  it_behaves_like "host name respects ECS setting", :disabled, "host"
+  it_behaves_like "host name respects ECS setting", :v1, "[host][name]"
+  it_behaves_like "host name respects ECS setting", :v8, "[host][name]"
 end
