@@ -1,3 +1,6 @@
+## 3.1.1
+  - Docs: added information on ECS v8 support [#19](https://github.com/logstash-plugins/logstash-input-heartbeat/pull/19)
+
 ## 3.1.0
   - Added new `sequence` setting to manage the type of sequence generator and added ECS 
     compatibility behavior [#18](https://github.com/logstash-plugins/logstash-input-heartbeat/pull/18)
